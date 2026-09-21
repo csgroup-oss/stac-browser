@@ -1,0 +1,45 @@
+{{- if .Values.listenerset.enabled }}
+{{- $listenerset := .Values.listenerset -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ include "stac-browser.fullname" . }}
+  namespace: {{ include "stac-browser.namespace" . }}
+  labels:
+    {{- include "stac-browser.labels" . | nindent 4 }}
+    {{- with $listenerset.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $listenerset.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $listenerset.parentRef }}
+  parentRef:
+    {{- toYaml . | nindent 4 }}
+  {{- else }}
+  {{- fail "listenerset.parentRef is required when listenerset.enabled is true" }}
+  {{- end }}
+  listeners:
+    {{- if $listenerset.listeners }}
+    {{- toYaml $listenerset.listeners | nindent 4 }}
+    {{- else }}
+    - name: {{ $listenerset.listenerName }}
+      port: {{ $listenerset.port }}
+      protocol: {{ $listenerset.protocol }}
+      {{- with $listenerset.hostname }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      {{- if $listenerset.tls.enabled }}
+      tls:
+        mode: {{ $listenerset.tls.mode }}
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: {{ $listenerset.tls.secretName | default (printf "%s-tls" $listenerset.hostname) }}
+      {{- end }}
+      allowedRoutes:
+        {{- toYaml $listenerset.allowedRoutes | nindent 8 }}
+    {{- end }}
+{{- end }}

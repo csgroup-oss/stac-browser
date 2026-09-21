@@ -1,0 +1,23 @@
+apiVersion: v2
+name: stac-browser
+description: A Helm chart for STAC Browser
+home: https://github.com/radiantearth/stac-browser
+sources:
+  - https://github.com/radiantearth/stac-browser
+keywords:
+  - stac
+  - browser
+  - geospatial
+  - catalog
+  - kubernetes
+
+# Application chart containing the templates needed to deploy STAC Browser.
+type: application
+# Gateway API resources require the corresponding CRDs beyond this minimum.
+kubeVersion: ">=1.23.0-0"
+
+# Chart version. Increment on every chart template or default-value change.
+version: 0.4.0
+
+# Upstream STAC Browser application version.
+appVersion: 5.1.0

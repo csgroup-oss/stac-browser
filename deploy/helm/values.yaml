@@ -1,0 +1,277 @@
+# -- Provide a name in place of `stac-browser`
+nameOverride: stac-browser
+# -- String to fully override the default chart name (`stac-browser`)
+fullnameOverride: ""
+# -- Override the namespace
+# @default -- `.Release.Namespace`
+namespaceOverride: ""
+
+# -- Common labels added to every resource
+commonLabels: {}
+# -- Common annotations added to Deployment, Service, and Ingress resources
+commonAnnotations: {}
+
+# -- Number of STAC Browser replicas when autoscaling is disabled
+replicaCount: 1
+# -- Number of old ReplicaSets to retain
+revisionHistoryLimit: 3
+# -- Deployment strategy
+deploymentStrategy: {}
+# -- Additional annotations for the Deployment
+deploymentAnnotations: {}
+# -- Additional labels for the Deployment
+deploymentLabels: {}
+
+image:
+  # -- Optional image registry prefix
+  registry: ""
+  # -- Container image repository
+  repository: ghcr.io/radiantearth/stac-browser
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion
+  tag: ""
+  # -- Optional image digest. When both `tag` and `digest` are set, the chart renders `repository:tag@digest`.
+  digest: ""
+
+# -- Image pull secrets for the STAC Browser pod
+imagePullSecrets: []
+
+# -- STAC Browser options exposed as `SB_*` environment variables.
+# Use option names exactly as documented upstream, without the `SB_` prefix.
+# Non-string values are JSON-encoded before injection.
+# Format: `key: value`.
+# Note: `pathPrefix` is automatically set if ingress or httproute uses a non-root path.
+# See: https://github.com/radiantearth/stac-browser/blob/main/docs/options.md
+options: {}
+
+# -- Additional raw environment variables as a Kubernetes `env` list.
+# Prefer `options` for STAC Browser options.
+extraEnvVars: []
+
+# -- Additional envFrom entries
+extraEnvFrom: []
+
+# -- Annotations added to the pod template
+podAnnotations: {}
+# -- Labels added to the pod template
+podLabels: {}
+
+# -- Pod priority class name
+priorityClassName: ""
+# -- RuntimeClass name to use for the pod
+runtimeClassName: ""
+# -- Host aliases added to the pod
+hostAliases: []
+# -- Topology spread constraints for the pod
+topologySpreadConstraints: []
+# -- Extra init containers
+initContainers: []
+# -- Pod termination grace period in seconds
+terminationGracePeriodSeconds: null
+
+# -- Pod-level security context
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- Container security context
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  # -- Kubernetes service type
+  type: ClusterIP
+  # -- Additional labels added to the service
+  labels: {}
+  # -- Additional annotations added to the service
+  annotations: {}
+  # -- Main service port name
+  portName: http
+  # -- Main service port
+  port: 8080
+  # -- Target port for the main service port
+  targetPort: http
+  # -- Additional service ports
+  extraPorts: []
+
+ingress:
+  # -- Enable ingress
+  enabled: false
+  # -- Ingress hostname
+  hostname: stac-browser.example.com
+  # -- Path for the ingress rule
+  path: /
+  # -- Ingress path type
+  pathType: Prefix
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+  # -- Enable TLS for the ingress hostname
+  tls: false
+  # -- TLS secret name. Defaults to `{hostname}-tls` when tls is true.
+  tlsSecretName: ""
+  # -- Additional ingress hostnames
+  extraHosts: []
+  # -- Additional TLS entries
+  extraTls: []
+
+listenerset:
+  # -- Enable creation of a shared ListenerSet resource
+  enabled: false
+  # -- Additional labels added to the ListenerSet
+  labels: {}
+  # -- Additional annotations added to the ListenerSet
+  annotations: {}
+  # -- Parent Gateway reference for the ListenerSet
+  parentRef: {}
+  # -- Listener hostname. When empty, the listener does not set a hostname
+  hostname: stac-browser.example.com
+  # -- Name of the shared listener
+  listenerName: https
+  # -- Listener port
+  port: 443
+  # -- Listener protocol
+  protocol: HTTPS
+  tls:
+    # -- Enable TLS on the listener
+    enabled: true
+    # -- TLS termination mode
+    mode: Terminate
+    # -- Secret name containing the TLS certificate. Defaults to `{hostname}-tls` when hostname is set.
+    secretName: ""
+  # -- Allowed routes for the shared listener
+  allowedRoutes:
+    namespaces:
+      from: Same
+  # -- Explicit listener list. When set, overrides the synthesized listener fields above.
+  listeners: []
+
+httproute:
+  # -- Enable HTTPRoute creation
+  enabled: false
+  # -- Additional labels added to the HTTPRoute
+  labels: {}
+  # -- Additional annotations added to the HTTPRoute
+  annotations: {}
+  # -- Explicit parent references. When empty and `listenerset.enabled=true`, the route attaches to the chart ListenerSet.
+  parentRefs: []
+  # -- Optional hostnames for the route. When empty and `listenerset.hostname` is set, that hostname is used.
+  hostnames: []
+  # -- HTTPRoute rules forwarded to the STAC Browser service
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+autoscaling:
+  # -- Enable HorizontalPodAutoscaler creation
+  enabled: false
+  # -- Minimum number of replicas
+  minReplicas: 1
+  # -- Maximum number of replicas
+  maxReplicas: 3
+  # -- Target average CPU utilization percentage
+  targetCPUUtilizationPercentage: 80
+  # -- Target average memory utilization percentage
+  targetMemoryUtilizationPercentage: null
+
+podDisruptionBudget:
+  # -- Enable PodDisruptionBudget creation
+  enabled: false
+  # -- Minimum number of available pods
+  minAvailable: 1
+  # -- Maximum number of unavailable pods
+  maxUnavailable: null
+
+# -- Resource requests and limits for the container
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+
+# -- Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+# -- Startup probe configuration
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+  failureThreshold: 30
+  periodSeconds: 2
+
+# -- Additional volumes to add to the Deployment definition
+# Example: Configure nginx volumes with size limits for production
+# extraVolumes:
+#   - name: nginx-cache
+#     emptyDir:
+#       sizeLimit: 1Gi
+#   - name: nginx-run
+#     emptyDir:
+#       sizeLimit: 100Mi
+#   - name: nginx-tmp
+#     emptyDir:
+#       sizeLimit: 500Mi
+#       medium: Memory
+extraVolumes: []
+
+# -- Additional volume mounts to add to the container
+# Example: Mount nginx volumes
+# extraVolumeMounts:
+#   - name: nginx-cache
+#     mountPath: /var/cache/nginx
+#   - name: nginx-run
+#     mountPath: /var/run
+#   - name: nginx-tmp
+#     mountPath: /tmp
+extraVolumeMounts: []
+
+# -- Custom entrypoint scripts to run during container startup
+# Each script is mounted as an individual file under /docker-entrypoint.d/ so the upstream nginx
+# entrypoint finds regular files and executes them in alphabetical order.
+# Example: Patch theme colors and axios settings
+# entrypointScripts:
+#   "50-patch-theme.sh": |
+#     #!/bin/sh
+#     set -e
+#     SITE_DIR=/usr/share/nginx/html
+#     CSS_DIR=$SITE_DIR/css
+#     # Replace primary color #188191 with #3b82f6
+#     for file in "$CSS_DIR"/*.css; do
+#       [ -e "$file" ] || continue
+#       sed -i "s/#188191/#3b82f6/gI" "$file"
+#     done
+#     # Add withCredentials to axios
+#     sed -i 's/data:[a-z]\.body/&,withCredentials:true/g' $SITE_DIR/js/app.*.js
+entrypointScripts: {}
+
+# -- Node selector for the pod
+nodeSelector: {}
+
+# -- Tolerations for the pod
+tolerations: []
+
+# -- Affinity rules for the pod
+affinity: {}
+
+# -- Extra raw Kubernetes objects rendered with `tpl`
+extraObjects: []
